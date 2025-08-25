@@ -1,0 +1,229 @@
+Welcome to the lab
+Welcome to the lab, and thank you for participating in today’s experiment.
+Please place all your personal belongings away and switch off your phones and other mobile devices so
+we can have your complete attention. DO NOT socialize or talk during the experiment.
+It is very important that you do not touch the computer until you are instructed to do so. When you are
+told to use the computer, please use it only as instructed. In particular, do not attempt to browse the
+web or use programs unrelated to the experiment.
+The Experiment
+The experiment you participate in today is an experiment in spatial planning, where you and other
+participants determine whether a Project gets developed or not. At the end of the experiment, you are
+paid for your participation in cash. Each of you may earn different amounts. The amount you earn
+depends on your decisions, chance, and others’ decisions.
+You will be using the computer for the entire experiment, and all interaction between you and others
+will be through computer terminals. You will interact anonymously and your decisions will only be
+stored together with your random ID number. Your name will not be made public, neither today nor in
+the future.
+Computer Instruction
+We will go through these instructions very slowly and it is important that you follow them. If you have
+any questions, raise your hand and your question will be answered so everyone can hear. Again,
+please do not hit any keys until you are told to do so.
+Overview of the experiment
+At the start of the experiment, each of you will be randomly assigned a role, you will be a developer,
+owner, or speculator. All roles remain the same throughout today’s experiment; so if you are an
+owner in round 1, you remain an owner throughout the experiment. In this experiment, you will play
+6 rounds; the first round is a practice round. Your performance in the remaining 5 rounds will
+determine your pay. One of those rounds will be picked at random to determine your payment.
+In every round, all players will decide on the development of a plot of land owned by the developer via
+a set procedure. The players either implement a Project, or no Project is implemented. The project
+decreases the value of all the land owners by different values, as well as increases the value of the developer. Both the value of the land with a Project and the value of the land with No Project are
+randomly drawn for each owner and the developer in each round.
+The developer and the owners pay taxes to the tax authority as a proportion of the value they
+declare their property to be worth. All players in the experiment own shares in the tax revenue
+earned by the tax authority: the developer gets 30 shares, an owner gets 6 shares, and a speculator
+gets 5 shares. A total of 90 tax shares are circulating among the players. During the experiment,
+there is a market where players can buy and sell those tax shares. The value of a tax share is equal to
+1/100th of the TOTAL tax revenue raised after the second declaration (see stage “Final Declaration”
+below).
+Players earn points for each tax share they own at the end of the round, the cash balance not used
+to buy shares, the gain or loss due to land speculations, and the value of their plot of land given the
+choice on the project if they are developer or owner.
+
+Below, we explain the stages of the experiment in detail.
+
+Phase: “Presentation”
+All computer screens have some common elements that we will briefly explain here. The blue bar (see
+item 1) at the top shows your role in the experiment at the far left and some information about the
+current state of the round. At the far right, you can see the round and phase of the experiment. Every
+phase has a time limit, a clock is shown next to the round and phase indication.
+Area 2 shows the layout of the land. Your own role and plot of land are highlighted in blue in this area.
+All owners and the developer have a value for their plot of land that depends on whether or not the
+project is developed. These values are randomly drawn from a uniform distribution in every round.
+Area 3 shows the value ranges from which the actual values for all players are drawn, for each role the
+minimum and maximum values are indicated. Note that these minimum and maximum values can vary
+from session to session, but will remain the same during the session today.
+You can see the values used in your session on your computer screen throughout the experiment.
+Note that in each round the project is either developed or not. If the project is developed, each player
+receives the value of their land with the Project at the end of the round. If the group decides not to
+develop the land, each player receives the value of their land under the No Project condition at the end
+of the round.
+Area 4 (see figure) shows, for each owner and developer privately, their values for your property
+when the project is not developed (No Project) and when the project is developed (Project). The
+computer will not tell other players what your private value for the land is. In the next phase, the
+owners and developer will declare their value for their property under the *No Project* and
+*Project* outcomes. The speculators don’t own any property and therefore don’t see these values.
+
+Phase: “Declaration”
+The Owners and the Developer are asked to submit their initial declaration of the value for their plot
+of land, for BOTH the *No Project* and *Project outcome* in area 5 (see figure below). The value of
+the land for each player depends on whether the project is implemented or not. Therefore, the
+owners and developer are asked to submit two values, one for when the project is not implemented
+and one for when the project is implemented. Declarations are only submitted once you push the
+blue button and confirm your choice. If you don’t submit your values, the lowest possible value from
+the range ‘No Project’ (see area 3), will be filled in as the declaration for ‘No Project’, and similarly
+for the ‘Project’ condition.
+Each owner and the developer can only submit their first declaration once per round; repeat
+submissions are ignored. Owners and the developer pay a tax equal to 1% (see Area 5; tax bill) of
+their initial declared value under the development option that is ultimately chosen. Hence, if the
+project is implemented, owners and developers pay 1% of their initial declaration for the ‘project’
+option but do not pay a tax over their declaration when the project is not implemented. In area 5
+you see how much taxes you pay if you fill in the declaration box.
+In area 5 you also see *value percentile*, which tells you what percentage of possible values (for the
+properties) from the uniform distribution is below your declaration. This information is also shown
+to the speculators in the next phase.
+IMPORTANT: At this point of the game, a decision is reached on whether the project is
+*implemented* or not. The computer SUMS all the declarations of the six players (5 owners + 1
+developer) for EACH condition (NO Project or Project). The condition (Project or No Project) with the
+highest sum total of Declarations wins and is chosen.
+The next phase starts when (1) all owners have submitted their values, or (2) the timer in the top
+right-hand corner has run out.
+
+Phase: “Speculation”
+In this phase, ‘Speculators’ can choose to ‘buy’ one or more of the plots of land from the owners and
+developer. They can do so by clicking the preferred plot(s) of land, under the CHOSEN CONDITION
+(Determined in the previous phase) in Area 6 (see Figure). Speculators see both the declared value
+(number in each plot outside of the brackets), and the *value percentile* (the percentage between
+brackets) for each plot of land. The percentile shows what percentage of possible values for this plot
+of land is below the owner’s declaration. The choice to buy properties of land is registered after you
+select the plots, click the blue submit button, and confirm your choice.
+If a speculator buys a plot of land, they pay a price equal to the initial declaration of the respective
+plot owner under the chosen condition. This price is received by the owner or developer of that plot
+of land. Plots of land are automatically sold back to their original owners at the average of the ‘real
+value’ to the owners and the declaration of the owner. Speculators thus receive half of the
+difference between this ‘real value’ and the initial declaration for every plot they bought. If several
+speculators buy the same plot in a round, they share this value. If their plot is bought, owners and
+developer thus pay half of the difference between their real valuation and their declaration. In short,
+as a speculator, you lose value if you buy a property where the owner or developer declared a higher
+value than their real value. However, as a speculator, you earn value if you buy a property where the
+owner or developer declared a lower value than their real value.
+The next phase starts when (1 ) all speculators have submitted their buy requests, or (2) the timer in
+the top right-hand corner has run out. As a speculator, you will neither earn nor lose points if you
+choose not to buy any property under the chosen condition.
+
+Phase: “ Market”
+At this point, all players will participate in a market in which shares can be traded (see the figure).
+Each player has shares in the market; the developer has 30 shares, each of the 5 owners has 6 shares
+and each of the 6 speculators has 5 shares. There are a total of 90 shares that can be traded.
+After the market, the experiment asks the developer and owners to make a final declaration for the
+value of their plot of land with the chosen condition (Project or No Project). The computer then
+levies a tax of 33% of this declaration, and another round of speculations follows. Each share has a
+value equal to 1/100 of the total Tax Income based on the final declarations.
+
+To give all players an idea of what the tax share is worth in that round, the computer gives both a
+private and a public signal to each player in Area 8.
+All players see the *same* public signal of the value of the tax shares for each market. This value is
+based on the *initial declarations* made by the owners and developer. If the owners and developers
+all declare the *REAL* value of their properties, the public signal perfectly predicts the share value in
+the market. If they do not declare their *REAL* value, the public signal will be off proportionally to
+the degree the owners don’t declare their *REAL* values.
+Each player also gets a private signal about the value of the share. The private signal is a noisy signal
+of the true value of a share in the chosen condition. The private signal is determined by the value of
+the tax shares when all players declare their *REAL VALUES* + an error term. The error term is
+drawn randomly and individually for each player and is between 5% below or 5% above the average
+of these *REAL* values over the experiment.
+Additionally, you will see the contracts that have been closed, as well as the ‘median price’ of the
+last seven trades in Area 9.
+
+Trading
+In the Market phase, all players can trade tax shares by buying or selling tax shares.
+How to offer to Sell a share;
+-The ‘asks’ (offer to sell) can be done in area 10 (see figure) by typing in the value you would
+like to receive for the share in that market and pushing the blue ‘Ask’ button.
+- After that the ‘offer to sell’ your share (ask) appears in the area under Area 10
+- At that point, you did not sell your share yet. A buyer has to accept your offer first.
+How to offer to buy a share;
+- The ‘bids’ (offer to buy) can be done in area 11, by typing the value you would like to pay for
+a share and pressing the blue ‘Bid’ button.
+- After that your ‘offer to buy’ (Bid) a share appears above area 11.
+- At that point, you did not buy a share yet. A seller has to accept your offer first.
+
+Offers that you made (either to buy or sell) are marked with an *. You can remove an offer that has
+not been accepted yet by pressing the “Remove Ask” or “Remove Bid” button.
+How to immediately buy or sell a share;
+You can also accept an offer to buy or sell a share at the listed price by clicking the “Buy @” or “Sell
+@” buttons in Area 12. A player that buys or sells a share in this way, automatically receives the best
+available offer of all offers that are outstanding at that time.
+
+You can see the amount of cash and shares that you have available in the areas without a number at
+any time. You can make as many offers as you like. This market will last for 4 and a half minutes and
+all participants move to the next phase at the end of this period.
+
+Phase: “Final Declaration”
+In the Final declaration phase, the Owners and developers are asked to submit their final declaration
+of the value of their property in Area 13 (see figure below). Note that owners now only have to
+declare their valuation for the development that took place. If the project is implemented, they
+declare a value of their land with the project; if the project is not implemented, they declare a value
+of their land for no project.
+In the figure, you see the ‘no project’ is chosen in the earlier declaration phase (yellow band). The
+values declared here can be different from the initial declarations. You will see the declaration you
+have made in the initial declaration in area 13. There you can change that value if you wish to do so.
+Declarations are only submitted once you push the blue button and confirm your choice. If you don’t
+submit your value, the lowest possible value from the range of the chosen condition (‘No Project’ in
+this example) will be filled in as the declaration.
+Please note that taxes are substantially higher here: owners and developer pay 33% of their declared
+value as a tax in this declaration phase.
+In area 14, you will see if speculators bought your property based on the first declaration and what
+the result is of that transaction.
+The next phase starts when (1) all owners have submitted their values, or (2) the timer in the top
+right-hand corner has run out.
+
+Phase: “Final Speculation”
+The final speculation repeats the first speculation. Speculators’ can choose to ‘buy’ one or more of
+the plots of land from the owners and developer. Speculators see both the declared value (number
+in each plot outside of the brackets) and the *value percentile* (the percentage between brackets)
+for each plot of land. The percentile shows what percentage of possible values for this plot of land is
+below the owner’s declaration. The choice to buy properties of land is registered after you select the
+plots, click the blue submit button, and confirm your choice.
+If a speculator buys a plot of land, they pay a price equal to the final declaration of the respective
+plot owner under the chosen condition. This price is received by the owner or developer of that plot
+of land. Plots of land are automatically sold back to their original owners at the average of the ‘real
+value’ to the owners and the owner's declaration. Speculators thus receive half of the difference
+between this ‘real value’ and the final declaration for every plot they bought. If several speculators
+buy the same plot in a round, they share this value. If their plot is bought, owners and developer
+thus pay half of the difference between their real valuation and their final declaration. In short, as a
+speculator, you lose value if you buy a property where the owner or developer declared a higher
+value than their real value. However, as a speculator, you earn value if you buy a property where the
+owner or developer declared a lower value than their real value.
+The next phase starts when (1) all speculators have submitted their buy requests, or (2) the timer in
+the top-right-hand corner has run out. As a speculator, you will neither earn nor lose points if you
+choose not to buy any property under the chosen condition.
+
+Phase: “Results”
+Once the final “Speculation” phase is done, the computer collects the tax revenue and the owners of
+tax shares receive their share of the tax revenue. Players are shown their results for the round they
+just played, a new round starts after the timer runs out. All players can see the points they earned in
+each phase, as well as the final “total earnings” in that round, in area 16.
+
+After the “results” phase the game moves on to the next round. In total, there are 6 rounds, including
+the first practice round which does not count toward your final payment. From the last 5 rounds that
+are eligible for payment, one will be chosen at random.
+Phase: “Final Results”
+
+On the final results page (after the experiment is done), the amount you earned in “points”, as well
+as the “final Euro Amount” (Area 17) will be shown. The final Euro amount is calculated by taking the
+points earned, adding base points that depend on your role, and dividing this by a fixed exchange
+rate that depends on your role. The show-up fee is added to this total to make your payment.
+
+The experimenters will call the payment token (Area 18), and you will receive your payment.
+Make sure that you fill out the payment token and final amount, as well as all other information on
+the payment receipt before collecting your payment.
+Please fill out the survey questions before collecting your payment.
+Base points and exchange rates used in this session are the following:
+1) owners get 200.000 basepoints with an exchange rate of 20.000,
+2) speculators get 400.000 basepoints with an exchange rate of 20.000
+3) the developer gets 0 basepoints with an exchange rate of 50.000
+Login Instructions
+You will now be asked to pick an envelope in which you will find the number of the computer where
+you will sit.
+Once seated, log in with your student account, open the Edge browser and type in the following:
+https://yary.eu
