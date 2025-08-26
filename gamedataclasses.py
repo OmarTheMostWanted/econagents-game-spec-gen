@@ -2,12 +2,14 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 @dataclass
-class RolePhaseTasks:
-    """Tasks mapped to each phase for a single role."""
-    role: str
-    phase_tasks: Dict[str, List[str]] = field(default_factory=dict)
+class PhaseRoleTasks:
+    """Tasks mapped to each role for a single phase."""
+    phase: str
+    phase_number: int
+    actionable: bool
+    role_tasks: Dict[str, List[str]] = field(default_factory=dict)
 
 @dataclass
-class RolePhaseMatrix:
-    """Complete matrix: one entry per role."""
-    roles: List[RolePhaseTasks] = field(default_factory=list)
+class PhaseRoleMatrix:
+    """Complete matrix: one entry per phase."""
+    phases: List[PhaseRoleTasks] = field(default_factory=list)

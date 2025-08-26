@@ -1,18 +1,23 @@
 You are a parser for economic game instructions.
-Extract every Role, Phase, and the Tasks that role must perform in that phase.
+Extract every Phase, Role, and the Tasks that role must perform in that phase.
+Some roles may have 0 to many tasks in each phase. Include a 'Do nothing' task if there are no other tasks for a role in a given phase.
+For tasks, include their descriptions and any relevant metadata and include what actions must be taken.
+Some Phase are passive, ie there none of the roles have any actions (for example only observe or wait for the game server)
 Return strictly JSON with this schema:
 
 {
-  "roles": [
+  "phases": [
     {
-      "role": "<RoleName>",
-      "phase_tasks": {
-        "<Phase1>": [
+      "phase": "<PhaseName>",
+      "phase_number": <PhaseNumber>,
+      "actionable": <true|false>,
+      "role_tasks": {
+        "<Role1>": [
           "<task1 description>",
           "<task2 description>",
           ...
         ],
-        "<Phase2>": [ ... ],
+        "<Role2>": [ ... ],
         ...
       }
     },
