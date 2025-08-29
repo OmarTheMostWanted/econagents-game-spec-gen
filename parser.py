@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-INSTRUCTIONS_PATH = "example/Harberger.txt"
+INSTRUCTIONS_PATH = "example/harberger.txt"
 PROMPT_TEMPLATE_PATH = "prompts/role_phase_prompt.jinja2"
 
 with open(INSTRUCTIONS_PATH, "r") as f:
