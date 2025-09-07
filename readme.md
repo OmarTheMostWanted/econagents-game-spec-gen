@@ -31,10 +31,14 @@ A translation pipeline for converting natural language economic game specificati
 2. **Chunking and Semantic Segmentation:**  
    - Break down the specification into topic-constrained sections for more stable LLM output.
    - Create a phase-based role task matrix to map roles to specific tasks within each game phase.
+   - Identify Payoff structures, Game Dynamics, and Agent Behavior sections.
 
 3. **Prompt Construction and LLM Invocation:**  
    - Construct prompts (possibly chunk-wise) incorporating schema constraints and output format requirements.
-   - Use a YAML template to guide the structure of the output.
+   - Use a JSON template to guide the structure of the output.
+   - Invoke LLM(s) with prompt(s) to generate initial JSON data sctructures.
+   - Parse and validate JSON outputs for structural integrity.
+   - Human review can be optionally interleaved here.
 
 4. **Schema-Driven YAML Generation:**  
    - Use LLM(s) to generate YAML for each segment, strongly steering the model toward schema-compliant output.

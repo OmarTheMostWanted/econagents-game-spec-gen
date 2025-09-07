@@ -3,6 +3,10 @@ Extract every Phase, Role, and the Tasks that role must perform in that phase.
 Some roles may have 0 to many tasks in each phase. Include a 'Do nothing' task if there are no other tasks for a role in a given phase.
 For tasks, include their descriptions and any relevant metadata and include what actions must be taken.
 Some Phase are passive, ie there none of the roles have any actions (for example only observe or wait for the game server)
+
+Do NOT include any mechanics or instructions about how choices are entered (e.g., do not mention buttons, input fields, or software actions).
+Only list the choices/decisions themselves.
+
 Return strictly JSON with this schema:
 
 {
@@ -22,7 +26,17 @@ Return strictly JSON with this schema:
       }
     },
     ...
-  ]
+  ],
+  "payoff_consequences": [
+  {
+    "phase": "<PhaseName>",
+    "role": "<RoleName>",
+    "choice": "<Choice>",
+    "payoff": "<Payoff consequence or rule>"
+  },
+  ...
+]
+  
 }
 
 Here are the instructions to parse:
