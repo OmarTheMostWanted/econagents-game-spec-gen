@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 from jinja2 import Template
 from dotenv import load_dotenv
 from econagents.llm.openai import ChatOpenAI
-from logger_utils import get_logger
+
 
 # --- Robust Data Classes ---
 class Stage(Enum):
@@ -15,6 +15,7 @@ class Stage(Enum):
     STATE = "state"
     PROMPTS = "prompts"
     SETTINGS_UI = "settings_ui"
+
 
 class ParserState(Enum):
     IDLE = auto()
@@ -26,6 +27,7 @@ class ParserState(Enum):
     ERROR = auto()
     WRITING_FILE = auto()
 
+
 class Meta:
     def __init__(self, game_name, game_description, game_version, author1, author2, creation_date):
         self.game_name = game_name
@@ -35,6 +37,7 @@ class Meta:
         self.author2 = author2
         self.creation_date = creation_date
 
+
 class Role:
     def __init__(self, id, name, llm, notes, phases):
         self.id = id
@@ -43,6 +46,7 @@ class Role:
         self.notes = notes
         self.phases = phases
 
+
 class Phase:
     def __init__(self, phase, phase_number, actionable, role_tasks):
         self.phase = phase
@@ -50,12 +54,14 @@ class Phase:
         self.actionable = actionable
         self.role_tasks = role_tasks
 
+
 class PayoffConsequence:
     def __init__(self, phase, role, choice, payoff):
         self.phase = phase
         self.role = role
         self.choice = choice
         self.payoff = payoff
+
 
 class GameSpec:
     def __init__(self):
@@ -80,9 +86,10 @@ class GameSpec:
             "ui": self.ui,
         }
 
+
 # --- Parser Class ---
 class StagedGameSpecParser:
-    def __init__(self, game_spec_dir="example", prompt_dir="prompts", logger=None):
+    def __init__(self, game_spec_dir="example", prompt_dir="prompts"):
         load_dotenv()
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.llm = ChatOpenAI(api_key=self.api_key)
@@ -96,16 +103,29 @@ class StagedGameSpecParser:
         self.lock = threading.Lock()
         self.selected_game_path: Optional[str] = None
         self.game_spec = GameSpec()
-        self.logger = logger or get_logger("parser")
         self.last_prompt = None
         self.last_llm_response = None
-        self.logger.debug("Initialized StagedGameSpecParser")
 
     def list_game_specs(self) -> List[str]:
+        """
+        List all available game spec files in the game_spec_dir.
+
+        Returns:
+            List[str]: List of file paths to game spec files.
+        """
         return [os.path.join(self.game_spec_dir, f) for f in os.listdir(self.game_spec_dir)
                 if os.path.isfile(os.path.join(self.game_spec_dir, f))]
 
     def select_game_spec(self, path: str):
+        """
+        Select a specific game spec file to parse and reset parser state.
+
+        Args:
+            path (str): Path to the game spec file.
+
+        Raises:
+            FileNotFoundError: If the specified file does not exist.
+        """
         with self.lock:
             if not os.path.isfile(path):
                 raise FileNotFoundError(f"Game spec not found: {path}")
@@ -133,7 +153,7 @@ class StagedGameSpecParser:
 
     def _compose_context_for_stage(self, stage: Stage) -> str:
         """
-        Compose context for the current stage, including only relevant data from previous stages.
+        Compose context for the current stage, including relevant data from previous stages.
         """
         context_sections = []
         if stage == Stage.STATE:
@@ -165,21 +185,21 @@ class StagedGameSpecParser:
         # Join all context sections
         return "\n--- CONTEXT ---\n" + "\n\n".join(context_sections) if context_sections else ""
 
-    def _render_prompt(self, stage: Stage, context: Optional[str] = None) -> str:
-        self.logger.debug(f"Rendering prompt for stage: {stage}")
+    def _render_prompt(self, stage: Stage, context: Optional[str] = None , include_game_spec = True) -> str:
         template_str = self._get_prompt_template(stage)
         tpl = Template(template_str)
-        instructions = self._get_instructions()
+        if include_game_spec:
+            instructions = self._get_instructions()
+        else:
+            instructions = "[Game instructions omitted (in this view only)]"
         header = f"You are parsing stage: {stage.value}."
         schema_section = ""
         prompt = tpl.render(instructions=instructions, context=context or "", header=header, schema=schema_section)
         full_prompt = f"{header}\n{context or ''}\n{prompt}"
         self.last_prompt = full_prompt
-        self.logger.info(f"Prompt for stage {stage.value}:\n{full_prompt}")
         return full_prompt
 
     async def _run_llm_async(self, prompt: str) -> str:
-        self.logger.info(f"Sending prompt to LLM:\n{prompt}")
         messages = [
             {"role": "system", "content": "You are a JSON extractor."},
             {"role": "user", "content": prompt}
@@ -187,10 +207,18 @@ class StagedGameSpecParser:
         tracing_extra = {}
         response = await self.llm.get_response(messages, tracing_extra)
         self.last_llm_response = response
-        self.logger.info(f"LLM response:\n{response}")
         return response
 
     def run_stage(self, feedback: Optional[str] = None):
+        """
+        Run the LLM for the current stage, optionally with a custom prompt or feedback.
+
+        Args:
+            feedback (Optional[str]): Custom prompt to use for the LLM (e.g., with human feedback or previous LLM response).
+
+        Returns:
+            str: Name of the stage being run.
+        """
         with self.lock:
             stage = self.stages[self.current_stage_idx]
             self.state = ParserState.WAITING_RESPONSE
@@ -202,33 +230,38 @@ class StagedGameSpecParser:
             return stage.value
 
     def _run_stage_thread(self, stage: Stage, prompt: str):
+        import asyncio
+        def ignore_event_loop_closed(loop, context):
+            exception = context.get('exception')
+            if isinstance(exception, RuntimeError) and str(
+                    exception) == 'Event loop is closed':  # this exception occurs on loop.close() and I don't know how to get rid of it, but it looks like it has no effect so I'm ignoring it
+                return  # Suppress this error
+            loop.default_exception_handler(context)
+
         try:
-            import asyncio
-            self.logger.debug(f"Starting LLM thread for stage: {stage}")
             loop = asyncio.new_event_loop()
+            loop.set_exception_handler(ignore_event_loop_closed)
             asyncio.set_event_loop(loop)
             response = loop.run_until_complete(self._run_llm_async(prompt))
             self.state = ParserState.PROCESSING_RESPONSE
-            self.logger.debug(f"Received LLM response for stage: {stage}")
             self._process_stage_response(stage, response)
-            loop.close()
+            # Ensure all async generators and background tasks are shut down
+            loop.run_until_complete(loop.shutdown_asyncgens())
         except Exception as e:
-            self.logger.error(f"Exception in LLM thread for stage {stage}: {e}")
             self.stage_errors[stage] = str(e)
             self.state = ParserState.ERROR
+        finally:
+            loop.close()
 
     def _process_stage_response(self, stage: Stage, response: str):
-        self.logger.debug(f"Processing LLM response for stage: {stage}")
         try:
             data = json.loads(response)
         except Exception as e:
-            self.logger.error(f"JSON decode error for stage {stage}: {e}\nRaw response:\n{response}")
             self.stage_errors[stage] = f"Invalid JSON: {e}\nRaw response:\n{response}"
             self.state = ParserState.ERROR
             return
         valid, error = self._validate_stage(stage, data)
         if not valid:
-            self.logger.error(f"Validation error for stage {stage}: {error}")
             self.stage_errors[stage] = error
             self.state = ParserState.ERROR
             return
@@ -236,7 +269,6 @@ class StagedGameSpecParser:
         self.stage_errors[stage] = None
         self._update_game_spec(stage, data)
         self.state = ParserState.SUCCESS
-        self.logger.debug(f"Stage {stage} processed successfully.")
 
     def _validate_stage(self, stage: Stage, data: Any) -> (bool, Optional[str]):
         # Basic schema checks
@@ -274,18 +306,48 @@ class StagedGameSpecParser:
             self.game_spec.ui = data["ui"]
 
     def get_current_stage(self) -> str:
+        """
+        Get the name of the current parsing stage.
+
+        Returns:
+            str: Name of the current stage (e.g., "meta_roles_phases").
+        """
         return self.stages[self.current_stage_idx].value
 
     def get_stage_result(self) -> Any:
+        """
+        Get the parsed result of the current stage.
+
+        Returns:
+            Any: Parsed data for the current stage, or None if not available.
+        """
         return self.stage_results[self.stages[self.current_stage_idx]]
 
     def get_stage_error(self) -> Optional[str]:
+        """
+        Get the error (if any) for the current stage.
+
+        Returns:
+            Optional[str]: Error message for the current stage, or None if no error.
+        """
         return self.stage_errors[self.stages[self.current_stage_idx]]
 
     def give_feedback(self, feedback: str):
+        """
+        Retry the current stage with human feedback.
+
+        Args:
+            feedback (str): Feedback to include in the prompt (should also include previous LLM response for context).
+        """
         self.run_stage(feedback=feedback)
 
     def next_stage(self) -> Optional[str]:
+        """
+        Advance to the next parsing stage.
+
+        Returns:
+            Optional[str]: Name of the next stage, or None if all stages are complete.
+        """
         with self.lock:
             if self.current_stage_idx < len(self.stages) - 1:
                 self.current_stage_idx += 1
@@ -296,9 +358,27 @@ class StagedGameSpecParser:
                 return None
 
     def all_stages_successful(self) -> bool:
+        """
+        Check if all parsing stages completed successfully.
+
+        Returns:
+            bool: True if all stages are successful, False otherwise.
+        """
         return all(self.stage_results[s] for s in self.stages)
 
-    def write_results_to_file(self, output_path=None):
+    def write_results_to_file(self, output_path=None) -> str:
+        """
+        Write the final parsed game spec to a JSON file.
+
+        Args:
+            output_path (Optional[str]): Path for the output file. If not provided, a timestamped file is created in the output/ directory.
+
+        Returns:
+            str: Path to the output file.
+
+        Raises:
+            Exception: If not all stages are successful.
+        """
         import datetime
         if not self.all_stages_successful():
             raise Exception("Not all stages completed successfully.")
@@ -314,71 +394,157 @@ class StagedGameSpecParser:
         return output_path
 
     def get_state(self) -> str:
+        """
+        Get the current parser state.
+
+        Returns:
+            str: Name of the current parser state (e.g., "IDLE", "ERROR", "SUCCESS").
+        """
         return self.state.name
 
     def wait_for_llm(self, poll_interval=0.5):
+        """
+        Block until the LLM response for the current stage is ready.
+
+        Args:
+            poll_interval (float): Time in seconds between status checks.
+        """
+        count = 0
         while self.state == ParserState.WAITING_RESPONSE:
+            if count % 100 == 0:
+                print(f"Waiting for LLM response... (state: {self.state.name})")
+            count += 1
             time.sleep(poll_interval)
 
+    def _create_retry_with_feedback_prompt(self, human_feedback: Optional[str] = None) -> str:
+        """
+        Create a retry prompt for the current stage, including:
+        - The standard prompt for the current stage
+        - The previous LLM response
+        - Any error message (if present)
+        - Human feedback (if provided)
+
+        Args:
+            human_feedback (Optional[str]): Additional feedback from the human verifier.
+
+        Returns:
+            str: The constructed prompt for retrying the current stage.
+        """
+        stage = self.stages[self.current_stage_idx]
+        context = self._compose_context_for_stage(stage)
+        header = f"You are parsing stage: {stage.value}."
+        base_prompt = self._render_prompt(stage, context)
+        previous_response = self.last_llm_response or ""
+        error_message = self.stage_errors.get(stage) or ""
+        prompt_sections = [header, context]
+        if previous_response:
+            prompt_sections.append(f"\n--- PREVIOUS LLM RESPONSE ---\n{previous_response}")
+        if error_message:
+            prompt_sections.append(f"\n--- ERROR MESSAGE ---\n{error_message}")
+        if human_feedback:
+            prompt_sections.append(f"\n--- HUMAN FEEDBACK ---\n{human_feedback}")
+        prompt_sections.append(f"\n--- STANDARD PROMPT ---\n{base_prompt}")
+        return "\n".join(prompt_sections)
+
+    def retry_stage_with_feedback(self, human_feedback: Optional[str] = None):
+        """
+        Retry the current stage with the constructed prompt including previous response, error, and human feedback.
+
+        Args:
+            human_feedback (Optional[str]): Additional feedback from the human verifier.
+        """
+        prompt = self._create_retry_with_feedback_prompt(human_feedback)
+        self.run_stage(feedback=prompt)
+
+    def print_next_prompt_excluding_game_instructions(self):
+        """
+        Print the next prompt to be sent to the LLM, excluding the game instructions.
+        """
+        print(self._render_prompt(self.stages[self.current_stage_idx], include_game_spec=False))
+
 def main():
-    logger = get_logger("cli")
-    parser = StagedGameSpecParser(logger=logger)
-    logger.debug("Started CLI main function.")
+    parser = StagedGameSpecParser()
     print("\n=== EconAgents Game Spec Staged Parser ===\n")
     specs = parser.list_game_specs()
     if not specs:
         print("No game specs found in the example directory.")
-        logger.error("No game specs found.")
         return
     print("Available game specs:")
     for idx, spec in enumerate(specs):
         print(f"  [{idx}] {spec}")
-    while True:
-        try:
-            choice = int(input(f"Select a game spec [0-{len(specs)-1}]: "))
-            if 0 <= choice < len(specs):
-                break
-            else:
-                print("Invalid choice. Try again.")
-        except Exception:
-            print("Invalid input. Enter a number.")
+    # while True:
+    #     try:
+    #         choice = int(input(f"Select a game spec [0-{len(specs)-1}]: "))
+    #         if 0 <= choice < len(specs):
+    #             break
+    #         else:
+    #             print("Invalid choice. Try again.")
+    #     except Exception:
+    #         print("Invalid input. Enter a number.")
+
+    choice = 2 # auto-select for now
     parser.select_game_spec(specs[choice])
-    logger.info(f"Selected spec: {specs[choice]}")
     print(f"Selected spec: {specs[choice]}")
     print("\nStarting staged parsing...")
     while True:
         stage = parser.get_current_stage()
-        print(f"\n--- Running stage: {stage} ---")
-        logger.info(f"Running stage: {stage}")
-        prompt = parser._render_prompt(parser.stages[parser.current_stage_idx], parser._compose_context_for_stage(parser.stages[parser.current_stage_idx]))
-        print(f"\nPrompt for stage {stage}:\n{'-'*40}\n{prompt}\n{'-'*40}")
-        logger.info(f"Prompt for stage {stage}:\n{prompt}")
+        print(f"\033[1;34m\n--- Running stage: {stage} ---\033[0m")
+        print("\nNext prompt to be sent to LLM (excluding game instructions):")
+        print('' + '+'*40)
+        parser.print_next_prompt_excluding_game_instructions()
+        print('' + '+'*40)
+
+        human_satisfied = False
+        human_feedback = None
+        no_error = False
         parser.run_stage()
         parser.wait_for_llm()
-        result = parser.get_stage_result()
-        error = parser.get_stage_error()
-        if error:
-            print(f"Error in stage {stage}: {error}")
-            logger.error(f"Error in stage {stage}: {error}")
-            feedback = input("Enter feedback to retry, or press Enter to continue: ")
-            if feedback.strip():
-                parser.give_feedback(feedback)
+        # Keep running the stage until it produces no errors, then ask for human feedback, if human gives feedback try again, otherwise move to next stage
+        while not (human_satisfied or no_error):
+            human_satisfied = False
+            state = parser.get_state()
+            if state == "ERROR":
+                error = parser.get_stage_error()
+                print(f"\033[1;31mError in stage {stage}:\033[0m {error}")
+                print("Sending retry prompt")
+                parser.retry_stage_with_feedback(human_feedback)
                 parser.wait_for_llm()
                 continue
-        else:
-            print(f"Stage {stage} result:")
-            print(json.dumps(result, indent=2))
-            logger.info(f"Stage {stage} result: {json.dumps(result, indent=2)}")
-        next_stage = parser.next_stage()
-        if not next_stage:
-            break
-    if parser.all_stages_successful():
-        out_path = parser.write_results_to_file()
-        print(f"\nAll stages complete. Results written to {out_path}")
-        logger.info(f"All stages complete. Results written to {out_path}")
-    else:
-        print("\nNot all stages completed successfully.")
-        logger.error("Not all stages completed successfully.")
+            elif state == "SUCCESS":
+                no_error = True
+                result = parser.get_stage_result()
+                assert parser.get_stage_error() is None # sanity check
+                print(f"\033[1;32mStage {stage} completed successfully.\033[0m")
+                print(f"Parsed result:\n{json.dumps(result, indent=2)}")
+                while True:
+                    # feedback = input("Are you satisfied with this result? (y/n): ").strip().lower()
+                    feedback = 'y'  # auto-approve for now
+                    if feedback in ['y', 'n']:
+                        human_satisfied = (feedback == 'y')
+                        break
+                    else:
+                        print("Invalid input. Please enter 'y' or 'n'.")
+                if not human_satisfied:
+                    human_feedback = input("Please provide your feedback for retrying the stage: ").strip()
+                    print("Sending retry prompt with human feedback...")
+                    parser.retry_stage_with_feedback(human_feedback)
+                    parser.wait_for_llm()
+                    continue
+                else:
+                    next_stage = parser.next_stage()
+                    if next_stage:
+                        # blue
+                        print(f"\033[1;34m\n--- Moving to next stage: {next_stage} ---\033[0m")
+                        human_satisfied = False
+                        no_error = False
+                        parser.run_stage()
+                        parser.wait_for_llm()
+                    else:
+                        # Bold lime green
+                        print(f"\033[1;92mAll stages completed successfully!\033[0m")
+                        output_path = parser.write_results_to_file()
+                        print(f"Final game spec written to: {output_path}")
+                        return
 
 if __name__ == "__main__":
     main()
