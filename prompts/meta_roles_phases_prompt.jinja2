@@ -1,0 +1,48 @@
+{{ header }}
+
+Here are the instructions to parse:
+---
+{{ instructions }}
+
+Return strictly valid JSON with the following schema:
+{
+  "meta": {
+    "game_name": "<string>",
+    "game_description": "<string>",
+    "game_version": "<string>",
+    "author1": "<string>",
+    "author2": "<string>",
+    "creation_date": "<string>"
+  },
+  "roles": [
+    {
+      "id": "<string>",
+      "name": "<string>",
+      "llm": "<string>",
+      "notes": "<string>",
+      "phases": ["<PhaseName>", ...]
+    },
+    ...
+  ],
+  "phases": [
+    {
+      "phase": "<PhaseName>",
+      "phase_number": <int>,
+      "actionable": <true|false>,
+      "role_tasks": {
+        "<RoleName>": ["<task description>", ...],
+        ...
+      }
+    },
+    ...
+  ],
+  "payoff_consequences": [
+    {
+      "phase": "<PhaseName>",
+      "role": "<RoleName>",
+      "choice": "<Choice>",
+      "payoff": "<Payoff consequence or rule>"
+    },
+    ...
+  ]
+}

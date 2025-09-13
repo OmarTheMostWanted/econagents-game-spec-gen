@@ -1,0 +1,24 @@
+{{ header }}
+
+{{ context }}
+
+Here are the instructions to parse:
+---
+{{ instructions }}
+
+Using the META, ROLES, PHASES, and PROMPTS above, extract the settings and UI information for the YAML configuration as strictly valid JSON.
+Include:
+- settings: random_seed, max_rounds
+- ui: title, instructions
+
+Return strictly valid JSON with the following schema:
+{
+  "settings": {
+    "random_seed": "<int or string>",
+    "max_rounds": "<int>"
+  },
+  "ui": {
+    "title": "<string>",
+    "instructions": "<string>"
+  }
+}
