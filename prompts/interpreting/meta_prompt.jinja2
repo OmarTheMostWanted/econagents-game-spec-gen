@@ -1,0 +1,27 @@
+{{ header }}
+
+Here are the instructions to interpret:
+---
+Extract the meta section for the YAML configuration as strictly valid JSON.
+Include:
+- name: string
+- description: string
+- version: string
+- authors: list of strings
+- date: string (ISO format preferred)
+
+Return strictly valid JSON with the following schema:
+{
+  "meta": {
+    "name": "<string>",
+    "description": "<string>",
+    "version": "<string>",
+    "authors": ["<string>", ...],
+    "date": "<string>"
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

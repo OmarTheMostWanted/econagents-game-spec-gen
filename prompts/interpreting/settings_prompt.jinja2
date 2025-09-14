@@ -1,0 +1,19 @@
+{{ header }}
+
+Extract the settings section for the YAML configuration as strictly valid JSON.
+Include:
+- random_seed: string or integer
+- max_rounds: integer
+
+Return strictly valid JSON with the following schema:
+{
+  "settings": {
+    "random_seed": "<string|integer>",
+    "max_rounds": <integer>
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

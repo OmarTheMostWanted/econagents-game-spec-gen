@@ -1,0 +1,28 @@
+{{ header }}
+
+Extract the roles section for the YAML configuration as strictly valid JSON.
+Include for each role:
+- id: string
+- name: string
+- llm: string
+- phases: list of strings
+- meta: object with field 'notes': string
+
+Return strictly valid JSON with the following schema:
+{
+  "roles": [
+    {
+      "id": "<string>",
+      "name": "<string>",
+      "llm": "<string>",
+      "phases": ["<string>", ...],
+      "meta": { "notes": "<string>" }
+    },
+    ...
+  ]
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

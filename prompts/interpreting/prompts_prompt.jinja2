@@ -1,0 +1,29 @@
+{{ header }}
+
+{{ context }}
+
+Here are the instructions to interpret:
+---
+Using the ROLES, PHASES, and STATE VARIABLES above, extract the system and user prompts for each role and phase as strictly valid JSON.
+For each role, and for each phase they participate in, provide:
+- system: the system prompt for the LLM agent
+- user: the user prompt for the LLM agent
+
+Return strictly valid JSON with the following schema:
+{
+  "prompts": {
+    "<RoleId>": {
+      "<PhaseName>": {
+        "system": "<system prompt>",
+        "user": "<user prompt>"
+      },
+      ...
+    },
+    ...
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

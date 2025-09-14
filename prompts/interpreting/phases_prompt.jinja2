@@ -1,0 +1,20 @@
+{{ header }}
+
+Extract the phases section for the YAML configuration as strictly valid JSON.
+Include for each phase:
+- actions: list of strings
+- next_phase: string
+
+Return strictly valid JSON with the following schema:
+{
+  "phases": {
+    "init": { "actions": ["<string>", ...], "next_phase": "<string>" },
+    "decision": { "actions": ["<string>", ...], "next_phase": "<string>" },
+    "reveal": { "actions": ["<string>", ...], "next_phase": "<string>" }
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

@@ -89,7 +89,7 @@ class GameSpec:
 
 # --- Parser Class ---
 class StagedGameSpecParser:
-    def __init__(self, game_spec_dir="example", prompt_dir="prompts"):
+    def __init__(self, game_spec_dir="example", prompt_dir="prompts/parsing", output_dir="output/parse_out"):
         load_dotenv()
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.llm = ChatOpenAI(api_key=self.api_key)
@@ -105,6 +105,7 @@ class StagedGameSpecParser:
         self.game_spec = GameSpec()
         self.last_prompt = None
         self.last_llm_response = None
+        self.output_path = output_dir
 
     def list_game_specs(self) -> List[str]:
         """
@@ -188,16 +189,20 @@ class StagedGameSpecParser:
     def _render_prompt(self, stage: Stage, context: Optional[str] = None , include_game_spec = True) -> str:
         template_str = self._get_prompt_template(stage)
         tpl = Template(template_str)
-        if include_game_spec:
-            instructions = self._get_instructions()
-        else:
-            instructions = "[Game instructions omitted (in this view only)]"
+        instructions = self._get_instructions()
         header = f"You are parsing stage: {stage.value}."
         schema_section = ""
         prompt = tpl.render(instructions=instructions, context=context or "", header=header, schema=schema_section)
         full_prompt = f"{header}\n{context or ''}\n{prompt}"
         self.last_prompt = full_prompt
-        return full_prompt
+        if include_game_spec:
+            return full_prompt
+        else:
+            # recreate without instructions but without updating state
+            dry_instructions = "[Game instructions omitted (in this view only)]"
+            dry_prompt = tpl.render(instructions=dry_instructions, context=context or "", header=header, schema=schema_section)
+            return f"{header}\n{context or ''}\n{dry_prompt}"
+
 
     async def _run_llm_async(self, prompt: str) -> str:
         messages = [
@@ -234,7 +239,7 @@ class StagedGameSpecParser:
         def ignore_event_loop_closed(loop, context):
             exception = context.get('exception')
             if isinstance(exception, RuntimeError) and str(
-                    exception) == 'Event loop is closed':  # this exception occurs on loop.close() and I don't know how to get rid of it, but it looks like it has no effect so I'm ignoring it
+                    exception) == 'Event loop is closed':  # this exception occurs on loop.close() and I don't know how to get rid of it, but it looks like it has no effect, so I'm ignoring it
                 return  # Suppress this error
             loop.default_exception_handler(context)
 
@@ -386,7 +391,7 @@ class StagedGameSpecParser:
         if output_path is None:
             base = os.path.splitext(os.path.basename(self.selected_game_path))[0]
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = os.path.join("output", f"{base}_{timestamp}.json")
+            output_path = os.path.join(self.output_path, f"{base}_{timestamp}.json")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(self.game_spec.to_dict(), f, indent=2)
@@ -411,8 +416,8 @@ class StagedGameSpecParser:
         """
         count = 0
         while self.state == ParserState.WAITING_RESPONSE:
-            if count % 100 == 0:
-                print(f"Waiting for LLM response... (state: {self.state.name})")
+            if count % 10 == 0:
+                print(f"Waiting for LLM response... (state: {self.state.name}), elapsed: {count * poll_interval:.1f}s")
             count += 1
             time.sleep(poll_interval)
 
@@ -460,7 +465,9 @@ class StagedGameSpecParser:
         """
         Print the next prompt to be sent to the LLM, excluding the game instructions.
         """
-        print(self._render_prompt(self.stages[self.current_stage_idx], include_game_spec=False))
+        # print in gray:
+        prompt = self._render_prompt(self.stages[self.current_stage_idx], include_game_spec=False)
+        print(f"\033[1;90m{prompt}\033[0m")
 
 def main():
     parser = StagedGameSpecParser()
@@ -537,6 +544,9 @@ def main():
                         print(f"\033[1;34m\n--- Moving to next stage: {next_stage} ---\033[0m")
                         human_satisfied = False
                         no_error = False
+                        print('' + '+'*40)
+                        parser.print_next_prompt_excluding_game_instructions()
+                        print('' + '+'*40)
                         parser.run_stage()
                         parser.wait_for_llm()
                     else:

@@ -1,0 +1,34 @@
+{{ header }}
+
+{{ context }}
+
+Here are the instructions to interpret:
+---
+Extract the state section for the YAML configuration as strictly valid JSON.
+Include:
+- meta: variables describing the game meta (e.g., round number)
+- public: variables visible to all agents (e.g., history log)
+- private: variables private to each role (e.g., score)
+
+Return strictly valid JSON with the following schema:
+{
+  "state": {
+    "meta": [
+      {"id": "<string>", "type": "<string>", "description": "<string>", "default": <value>},
+      ...
+    ],
+    "public": [
+      {"id": "<string>", "type": "<string>", "description": "<string>", "default": <value>},
+      ...
+    ],
+    "private": [
+      {"id": "<string>", "role": "<RoleName>", "type": "<string>", "description": "<string>", "default": <value>},
+      ...
+    ]
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}

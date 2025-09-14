@@ -1,0 +1,19 @@
+{{ header }}
+
+Extract the ui section for the YAML configuration as strictly valid JSON.
+Include:
+- title: string
+- instructions: string
+
+Return strictly valid JSON with the following schema:
+{
+  "ui": {
+    "title": "<string>",
+    "instructions": "<string>"
+  }
+}
+
+Do not include any other fields or YAML.
+
+GAME SPEC JSON:
+{{ json_data }}
