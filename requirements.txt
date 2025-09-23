@@ -2,5 +2,7 @@ econagents-ibex-tudelft
 python-dotenv
 jinja2
 econagents
+econagents_ibex_tudelft
 dotenv
 PyQt5
+PyYAML

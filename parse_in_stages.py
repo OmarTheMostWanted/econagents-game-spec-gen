@@ -489,7 +489,7 @@ def main():
     #     except Exception:
     #         print("Invalid input. Enter a number.")
 
-    choice = 2 # auto-select for now
+    choice = 3 # auto-select for now
     parser.select_game_spec(specs[choice])
     print(f"Selected spec: {specs[choice]}")
     print("\nStarting staged parsing...")
