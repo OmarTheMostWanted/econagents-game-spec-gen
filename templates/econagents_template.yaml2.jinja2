@@ -1,0 +1,76 @@
+meta:
+  name: "{{ game_name }}"
+  description: "{{ game_description }}"
+  version: "{{ game_version }}"
+  authors: ["{{ author1 }}", "{{ author2 }}"]
+  date: "{{ creation_date }}"
+
+roles:
+  - id: "{{ role_1_id }}"
+    name: "{{ role_1_name }}"
+    llm: "{{ role_1_llm }}"
+    phases: ["{{ phase_1 }}", "{{ phase_2 }}"]
+    meta:
+      notes: "{{ role_1_notes }}"
+  - id: "{{ role_2_id }}"
+    name: "{{ role_2_name }}"
+    llm: "{{ role_2_llm }}"
+    phases: ["{{ phase_1 }}"]
+    meta:
+      notes: "{{ role_2_notes }}"
+
+state:
+  meta:
+    - id: "round"
+      type: "integer"
+      description: "The current round number"
+      default: 1
+  public:
+    - id: "history"
+      type: "list"
+      description: "History log"
+      default: []
+  private:
+    - id: "score"
+      role: "{{ role_1_id }}"
+      type: "integer"
+      description: "The score for {{ role_1_name }}"
+      default: 0
+
+phases:
+  init:
+    actions: []
+    next_phase: "decision"
+  decision:
+    actions: ["cooperate", "defect"]
+    next_phase: "reveal"
+  reveal:
+    actions: []
+    next_phase: "init"
+
+prompts:
+  {{ role_1_id }}:
+    decision:
+      system: |
+        You are {{ role_1_name }}, acting in round {{ state.meta.round }} of the experiment.
+      user: |
+        Previous actions: {{ state.public.history }}. What is your next move?
+    reveal:
+      system: |
+        Here is the outcome: {{ state.public.history[-1] }}
+      user: |
+        Do you have any comments?
+  {{ role_2_id }}:
+    decision:
+      system: |
+        You are {{ role_2_name }}. Decide for round {{ state.meta.round }}.
+      user: |
+        Based on prior moves: {{ state.public.history }}. Choose your action.
+
+settings:
+  random_seed: "{{ random_seed }}"
+  max_rounds: "{{ max_rounds }}"
+
+ui:
+  title: "{{ ui_title }}"
+  instructions: "{{ ui_instructions }}"

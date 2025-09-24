@@ -1,0 +1,101 @@
+{{ header }}
+
+{{ context }}
+
+Here are the instructions to parse:
+---
+{{ instructions }}
+
+Goal: Extract reusable prompt partials ("prompt_partials") that will later be inserted into YAML under `prompt_partials` and referenced by agent role prompts.
+
+You MUST output strictly valid JSON ONLY (no markdown) with the schema:
+{
+  "prompt_partials": [
+    {"name": "game_description", "content": "<jinja enabled multiline string>"},
+    {"name": "game_information", "content": "<jinja enabled multiline string>"},
+    {"name": "game_history", "content": "<jinja enabled multiline string>"},
+    {"name": "system_<roleName>_<phaseNumber>", "content": "<jinja enabled multiline string>"},
+    {"name": "user_<roleName>_<phaseNumber>", "content": "<jinja enabled multiline string>"},
+    ...
+  ]
+}
+
+Definitions & Requirements:
+1. game_description:
+   - A concise, neutral overview of the game (purpose, core mechanics, strategic considerations if implied by payoffs).
+   - Use clear bullet points. Do NOT include phase- or role-specific instructions.
+2. game_information:
+   - Presents the current dynamic context. Must reference Jinja variables ONLY (no literal example values) using the following placeholders when relevant:
+{% raw %}
+     - Phase: {{ meta.phase }}
+     - Player number: {{ meta.player_number }}
+     - Role: {{ meta.role }}
+     - Player name: {{ meta.player_name }}
+{% endraw %}
+   - If some variables (e.g., player_name) may be absent, just include them plainly (the runtime templating layer will handle empties) — do NOT use conditionals here.
+3. game_history:
+   - Summarizes prior rounds if any; otherwise states it is the first round.
+   - MUST use a Jinja conditional with a loop over whatever public history structure exists.
+   - Choose the first matching public state variable among (in order): `history`, `history_log`, any public list whose name contains "history".
+   - For each round element, prefer keys: `round`, `my_choice`, `opponent_choice`, `my_payoff` if present; otherwise list all key-value pairs compactly.
+   - Example structure (wrap exactly in raw so it is not rendered now):
+{% raw %}
+{% if public_information.history %}
+Previous rounds:
+{% for r in public_information.history %}
+Round {{ r.round }}: You chose {{ r.my_choice }}, opponent chose {{ r.opponent_choice }}. You earned {{ r.my_payoff }} points.
+{% endfor %}
+{% else %}
+This is the first round.
+{% endif %}
+{% endraw %}
+   - Do NOT include instructions or decision guidance here; just factual recap.
+4. System partials (system_<roleName>_<phaseNumber>):
+   - Provide stable identity + role framing + high level objective for that role in that specific actionable phase.
+   - Include a very brief recap (1–3 lines) of relevant payoff logic IF present in actionable tasks or payoff_consequences.
+   - Should NOT specify exact output formatting (leave that to user partials).
+5. User partials (user_<roleName>_<phaseNumber>):
+   - Provide concrete instructions for what the agent must output in THAT phase for THAT role.
+   - If tasks mention making a choice, enumerate valid action tokens in ALL CAPS (e.g., COOPERATE, DEFECT) if they appear in the spec.
+   - If the output must be JSON, give a minimal JSON schema example (only required fields). Use Jinja placeholders for dynamic values:
+{% raw %} {{ meta.game_id }}, {{ meta.phase }}, {{ meta.player_number }}, {{ meta.role }} {% endraw %}
+     Only include fields that can be inferred from the spec.
+   - Include a section titled "Game Information" that embeds the game_information partial by referencing (do NOT inline its content) with:
+{% raw %}{% include "_partials/game_information.jinja2" %}{% endraw %}
+   - Optionally also include game_history where helpful using:
+{% raw %}{% include "_partials/game_history.jinja2" %}{% endraw %}
+   - If historical/public/private state may matter and its id appears in state meta/public/private arrays, reference them via Jinja variables, e.g.:
+{% raw %}
+       - History log: {{ public_information.history_log }} (if present)
+       - Score: {{ private_information.score }}
+{% endraw %}
+     ONLY reference variables that exist in STATE VARIABLES context.
+6. Naming:
+   - <roleName> must be the exact role name in lower_snake_case (spaces -> underscores, all lowercase).
+   - <phaseNumber> is the integer phase_number from phases array.
+   - Only generate system/user partials for (role, phase) pairs where that phase is actionable AND the role has at least one task in role_tasks for that phase.
+7. Content Formatting:
+   - Use Markdown headings and bullet lists sparingly and clearly, similar style to futarchy_config.yaml partials.
+   - Avoid redundant restatements between system and user partials.
+   - Keep each partial under ~350 tokens.
+8. Safety & Precision:
+   - Do NOT invent actions not present in tasks or payoff consequences.
+   - If multiple payoff consequences describe combinations, summarize the payoff structure succinctly (e.g., "Mutual cooperate yields 3 each; unilateral defect yields 5/0; mutual defect yields 1 each").
+
+Process Guidance (You must internally follow, but DO NOT output these steps):
+- Derive action tokens by scanning role_tasks text for verbs like "cooperate", "defect", or explicit enumerations.
+- Map payoff consequences to a compact descriptive summary ONLY if they match the role & actionable phase.
+- If no structured action tokens exist, instruct the agent to output a concise natural language answer relevant to the task.
+
+Validation Rules (Hard):
+- JSON only (no comments, no trailing commas, no markdown fences).
+- Every object in prompt_partials must have both name and content.
+- Must include at least game_description, game_information, game_history even if one sentence fallback is needed.
+- Do NOT duplicate name values.
+- Do NOT add names not present in the provided SKELETON list.
+
+Edge Cases:
+- If there is only one role and one actionable phase, still follow naming conventions (e.g., system_prisoner_1, user_prisoner_1).
+- If a role participates in a non-actionable phase, skip that phase.
+
+Return ONLY the JSON.

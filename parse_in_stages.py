@@ -3,7 +3,7 @@ import json
 import threading
 import time
 from enum import Enum, auto
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from jinja2 import Template
 from dotenv import load_dotenv
 from econagents.llm.openai import ChatOpenAI
@@ -13,8 +13,8 @@ from econagents.llm.openai import ChatOpenAI
 class Stage(Enum):
     META_ROLES_PHASES = "meta_roles_phases"
     STATE = "state"
-    PROMPTS = "prompts"
-    SETTINGS_UI = "settings_ui"
+    SETTINGS_UI = "settings_ui"  # moved earlier
+    PARTIAL_PROMPTS = "partial_prompts"  # now final stage
 
 
 class ParserState(Enum):
@@ -70,7 +70,7 @@ class GameSpec:
         self.phases: List[Phase] = []
         self.payoff_consequences: List[PayoffConsequence] = []
         self.state: Optional[Dict[str, Any]] = None
-        self.prompts: Optional[Dict[str, Any]] = None
+        self.partial_prompts: Optional[List[Dict[str, str]]] = None
         self.settings: Optional[Dict[str, Any]] = None
         self.ui: Optional[Dict[str, Any]] = None
 
@@ -81,7 +81,7 @@ class GameSpec:
             "phases": [p.__dict__ for p in self.phases],
             "payoff_consequences": [pc.__dict__ for pc in self.payoff_consequences],
             "state": self.state,
-            "prompts": self.prompts,
+            "prompt_partials": self.partial_prompts,
             "settings": self.settings,
             "ui": self.ui,
         }
@@ -89,7 +89,7 @@ class GameSpec:
 
 # --- Parser Class ---
 class StagedGameSpecParser:
-    def __init__(self, game_spec_dir="example", prompt_dir="prompts/parsing", output_dir="output/parse_out"):
+    def __init__(self, game_spec_dir="game_spec", prompt_dir="prompts/parsing", output_dir="output/parse_out"):
         load_dotenv()
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.llm = ChatOpenAI(api_key=self.api_key)
@@ -97,7 +97,7 @@ class StagedGameSpecParser:
         self.prompt_dir = prompt_dir
         self.state = ParserState.IDLE
         self.current_stage_idx = 0
-        self.stages = [Stage.META_ROLES_PHASES, Stage.STATE, Stage.PROMPTS, Stage.SETTINGS_UI]
+        self.stages = [Stage.META_ROLES_PHASES, Stage.STATE, Stage.SETTINGS_UI, Stage.PARTIAL_PROMPTS]
         self.stage_results: Dict[Stage, Any] = {stage: None for stage in self.stages}
         self.stage_errors: Dict[Stage, Optional[str]] = {stage: None for stage in self.stages}
         self.lock = threading.Lock()
@@ -106,6 +106,7 @@ class StagedGameSpecParser:
         self.last_prompt = None
         self.last_llm_response = None
         self.output_path = output_dir
+        self.expected_partial_names: List[str] = []  # track required partial names for validation
 
     def list_game_specs(self) -> List[str]:
         """
@@ -141,8 +142,8 @@ class StagedGameSpecParser:
         prompt_map = {
             Stage.META_ROLES_PHASES: "meta_roles_phases_prompt.jinja2",
             Stage.STATE: "state_prompt.jinja2",
-            Stage.PROMPTS: "prompts_prompt.jinja2",
-            Stage.SETTINGS_UI: "settings_ui_prompt.jinja2"
+            Stage.SETTINGS_UI: "settings_ui_prompt.jinja2",
+            Stage.PARTIAL_PROMPTS: "partial_prompts_prompt.jinja2",
         }
         template_path = os.path.join(self.prompt_dir, prompt_map[stage])
         with open(template_path, "r") as f:
@@ -158,32 +159,60 @@ class StagedGameSpecParser:
         """
         context_sections = []
         if stage == Stage.STATE:
-            # Pass roles, phases, payoff_consequences
             meta = self.stage_results.get(Stage.META_ROLES_PHASES, {})
             if meta:
                 context_sections.append("ROLES:\n" + json.dumps(meta.get("roles", []), indent=2))
                 context_sections.append("PHASES:\n" + json.dumps(meta.get("phases", []), indent=2))
                 context_sections.append("PAYOFF CONSEQUENCES:\n" + json.dumps(meta.get("payoff_consequences", []), indent=2))
-        elif stage == Stage.PROMPTS:
-            # Pass roles, phases, tasks, state variables
+        elif stage == Stage.SETTINGS_UI:
             meta = self.stage_results.get(Stage.META_ROLES_PHASES, {})
             state = self.stage_results.get(Stage.STATE, {})
-            if meta:
-                context_sections.append("ROLES:\n" + json.dumps(meta.get("roles", []), indent=2))
-                context_sections.append("PHASES:\n" + json.dumps(meta.get("phases", []), indent=2))
-            if state:
-                context_sections.append("STATE VARIABLES:\n" + json.dumps(state.get("state", {}), indent=2))
-        elif stage == Stage.SETTINGS_UI:
-            # Pass meta, roles, phases, prompts
-            meta = self.stage_results.get(Stage.META_ROLES_PHASES, {})
-            prompts = self.stage_results.get(Stage.PROMPTS, {})
             if meta:
                 context_sections.append("META:\n" + json.dumps(meta.get("meta", {}), indent=2))
                 context_sections.append("ROLES:\n" + json.dumps(meta.get("roles", []), indent=2))
                 context_sections.append("PHASES:\n" + json.dumps(meta.get("phases", []), indent=2))
-            if prompts:
-                context_sections.append("PROMPTS:\n" + json.dumps(prompts.get("prompts", {}), indent=2))
-        # Join all context sections
+            if state:
+                context_sections.append("STATE VARIABLES:\n" + json.dumps(state.get("state", {}), indent=2))
+        elif stage == Stage.PARTIAL_PROMPTS:
+            meta_stage = self.stage_results.get(Stage.META_ROLES_PHASES, {})
+            state_stage = self.stage_results.get(Stage.STATE, {})
+            settings_stage = self.stage_results.get(Stage.SETTINGS_UI, {})
+            roles = meta_stage.get("roles", []) if meta_stage else []
+            phases = meta_stage.get("phases", []) if meta_stage else []
+            payoff = meta_stage.get("payoff_consequences", []) if meta_stage else []
+            context_sections.append("ROLES:\n" + json.dumps(roles, indent=2))
+            context_sections.append("PHASES:\n" + json.dumps(phases, indent=2))
+            context_sections.append("PAYOFF CONSEQUENCES:\n" + json.dumps(payoff, indent=2))
+            if state_stage:
+                context_sections.append("STATE VARIABLES:\n" + json.dumps(state_stage.get("state", {}), indent=2))
+            if settings_stage:
+                context_sections.append("SETTINGS:\n" + json.dumps(settings_stage.get("settings", {}), indent=2))
+            # Build skeleton and record expected names
+            skeleton = []
+            self.expected_partial_names = []
+            def add_partial(name: str, **extra):
+                skeleton.append({"name": name, "content": "", **extra})
+                self.expected_partial_names.append(name)
+            add_partial("game_description")
+            add_partial("game_information")
+            add_partial("game_history")  # added generic history partial
+            def to_snake(name: str) -> str:
+                return name.lower().replace(" ", "_")
+            for ph in phases:
+                if not ph.get("actionable"):
+                    continue
+                phase_number = ph.get("phase_number")
+                phase_name = ph.get("phase")
+                role_tasks = ph.get("role_tasks", {}) or {}
+                for role_name, tasks in role_tasks.items():
+                    if not tasks:
+                        continue
+                    role_snake = to_snake(role_name)
+                    system_name = f"system_{role_snake}_{phase_number}"
+                    user_name = f"user_{role_snake}_{phase_number}"
+                    add_partial(system_name, phase=phase_name, phase_number=phase_number, role=role_name, tasks=tasks)
+                    add_partial(user_name, phase=phase_name, phase_number=phase_number, role=role_name, tasks=tasks)
+            context_sections.append("SKELETON:\n" + json.dumps(skeleton, indent=2))
         return "\n--- CONTEXT ---\n" + "\n\n".join(context_sections) if context_sections else ""
 
     def _render_prompt(self, stage: Stage, context: Optional[str] = None , include_game_spec = True) -> str:
@@ -239,10 +268,11 @@ class StagedGameSpecParser:
         def ignore_event_loop_closed(loop, context):
             exception = context.get('exception')
             if isinstance(exception, RuntimeError) and str(
-                    exception) == 'Event loop is closed':  # this exception occurs on loop.close() and I don't know how to get rid of it, but it looks like it has no effect, so I'm ignoring it
+                    exception) == 'Event loop is closed':
                 return  # Suppress this error
             loop.default_exception_handler(context)
 
+        loop = None  # ensure defined for finally
         try:
             loop = asyncio.new_event_loop()
             loop.set_exception_handler(ignore_event_loop_closed)
@@ -250,13 +280,13 @@ class StagedGameSpecParser:
             response = loop.run_until_complete(self._run_llm_async(prompt))
             self.state = ParserState.PROCESSING_RESPONSE
             self._process_stage_response(stage, response)
-            # Ensure all async generators and background tasks are shut down
             loop.run_until_complete(loop.shutdown_asyncgens())
         except Exception as e:
             self.stage_errors[stage] = str(e)
             self.state = ParserState.ERROR
         finally:
-            loop.close()
+            if loop is not None and not loop.is_closed():
+                loop.close()
 
     def _process_stage_response(self, stage: Stage, response: str):
         try:
@@ -275,8 +305,7 @@ class StagedGameSpecParser:
         self._update_game_spec(stage, data)
         self.state = ParserState.SUCCESS
 
-    def _validate_stage(self, stage: Stage, data: Any) -> (bool, Optional[str]):
-        # Basic schema checks
+    def _validate_stage(self, stage: Stage, data: Any) -> Tuple[bool, Optional[str]]:  # corrected type hint
         if stage == Stage.META_ROLES_PHASES:
             required = ["meta", "roles", "phases", "payoff_consequences"]
             missing = [k for k in required if k not in data]
@@ -285,14 +314,29 @@ class StagedGameSpecParser:
         elif stage == Stage.STATE:
             if "state" not in data:
                 return False, "Missing 'state' field"
-        elif stage == Stage.PROMPTS:
-            if "prompts" not in data:
-                return False, "Missing 'prompts' field"
         elif stage == Stage.SETTINGS_UI:
             required = ["settings", "ui"]
             missing = [k for k in required if k not in data]
             if missing:
                 return False, f"Missing required fields: {', '.join(missing)}"
+        elif stage == Stage.PARTIAL_PROMPTS:
+            if "prompt_partials" not in data:
+                return False, "Missing 'prompt_partials' field"
+            if not isinstance(data["prompt_partials"], list):
+                return False, "'prompt_partials' must be a list"
+            names = set()
+            for idx, item in enumerate(data["prompt_partials"]):
+                if not isinstance(item, dict) or "name" not in item or "content" not in item:
+                    return False, f"Each partial must be an object with 'name' and 'content' (error at index {idx})"
+                if item["name"] in names:
+                    return False, f"Duplicate partial name detected: {item['name']}"
+                names.add(item["name"])
+            missing_required = [n for n in self.expected_partial_names if n not in names]
+            if missing_required:
+                return False, f"Missing required partial(s): {', '.join(missing_required)}"
+            extra = [n for n in names if n not in self.expected_partial_names]
+            if extra:
+                return False, f"Unexpected extra partial name(s): {', '.join(extra)}"
         return True, None
 
     def _update_game_spec(self, stage: Stage, data: Any):
@@ -304,11 +348,11 @@ class StagedGameSpecParser:
             self.game_spec.payoff_consequences = [PayoffConsequence(**pc) for pc in data["payoff_consequences"]]
         elif stage == Stage.STATE:
             self.game_spec.state = data["state"]
-        elif stage == Stage.PROMPTS:
-            self.game_spec.prompts = data["prompts"]
         elif stage == Stage.SETTINGS_UI:
             self.game_spec.settings = data["settings"]
             self.game_spec.ui = data["ui"]
+        elif stage == Stage.PARTIAL_PROMPTS:
+            self.game_spec.partial_prompts = data["prompt_partials"]
 
     def get_current_stage(self) -> str:
         """
@@ -479,17 +523,17 @@ def main():
     print("Available game specs:")
     for idx, spec in enumerate(specs):
         print(f"  [{idx}] {spec}")
-    # while True:
-    #     try:
-    #         choice = int(input(f"Select a game spec [0-{len(specs)-1}]: "))
-    #         if 0 <= choice < len(specs):
-    #             break
-    #         else:
-    #             print("Invalid choice. Try again.")
-    #     except Exception:
-    #         print("Invalid input. Enter a number.")
+    while True:
+        try:
+            choice = int(input(f"Select a game spec [0-{len(specs)-1}]: "))
+            if 0 <= choice < len(specs):
+                break
+            else:
+                print("Invalid choice. Try again.")
+        except Exception:
+            print("Invalid input. Enter a number.")
 
-    choice = 3 # auto-select for now
+    # choice = 3 # auto-select for now
     parser.select_game_spec(specs[choice])
     print(f"Selected spec: {specs[choice]}")
     print("\nStarting staged parsing...")
