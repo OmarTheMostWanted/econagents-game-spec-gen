@@ -1,0 +1,24 @@
+{{ header }}
+You are the ROLE_PROMPTS stage.
+Extract per-role, per-phase prompts from JSON.prompts structure.
+If you cannot find a prompt for a role/phase/kind combination, do not fabricate it.
+Output only system and user kinds.
+If a prompt exists but is empty or whitespace, set content to "cannot infer".
+
+Return STRICT JSON:
+{
+  "role_prompts": [
+    {"raw_role_id": "<roleId as string>", "phase_name": "<phase>", "kind": "system|user", "content": "<string or cannot infer>"}, ...
+  ]
+}
+
+Rules:
+- Iterate top-level keys of json.prompts (role ids) in order.
+- Inside each role id, iterate phase objects.
+- For each phase: if key system present -> emit system; if key user present -> emit user.
+- Preserve ordering roleId -> phase key order -> system then user.
+- No duplication.
+- No external inference.
+
+Parsed JSON:
+{{ parsed_json }}

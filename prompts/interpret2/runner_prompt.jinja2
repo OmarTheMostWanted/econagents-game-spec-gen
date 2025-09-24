@@ -1,0 +1,34 @@
+{{ header }}
+You are the RUNNER stage.
+Extract runtime runner configuration ONLY from the provided JSON. Do not infer beyond direct textual or structural evidence. If any field cannot be determined solely from this JSON, return the literal string "cannot infer" for that field (or [] for list fields).
+
+Return STRICT JSON:
+{
+  "runner": {
+    "type": "<string or cannot infer>",
+    "protocol": "<string or cannot infer>",
+    "hostname": "<string or cannot infer>",
+    "path": "<string or cannot infer>",
+    "port": "<int or cannot infer>",
+    "game_id": "<int or cannot infer>",
+    "logs_dir": "<string or cannot infer>",
+    "log_level": "<string or cannot infer>",
+    "prompts_dir": "<string or cannot infer>",
+    "phase_transition_event": "<string or cannot infer>",
+    "phase_identifier_key": "<string or cannot infer>",
+    "observability_provider": "<string or cannot infer>",
+    "continuous_phases": [<int>, ...] OR [],
+    "min_action_delay": "<int or cannot infer>",
+    "max_action_delay": "<int or cannot infer>"
+  }
+}
+
+Rules:
+- Look for json.runner or json.game.runner or top-level fields with matching names.
+- continuous_phases must be a list of integers if present; else empty list.
+- All numeric values may be emitted as numbers; if unclear emit "cannot infer" (string).
+- Do NOT fabricate values.
+- No additional keys.
+
+Parsed JSON:
+{{ parsed_json }}

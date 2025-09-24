@@ -1,0 +1,20 @@
+{{ header }}
+You are the AGENTS stage.
+Extract agent -> role mappings ONLY if explicitly present in the parsed JSON. Do not infer number of agents.
+If no mapping present return an empty list.
+If a field cannot be determined for an existing entry, use the literal string "cannot infer".
+
+Return STRICT JSON:
+{
+  "agents": [ {"id": <int or "cannot infer">, "raw_role_ref": "<original role reference or cannot infer>"}, ... ]
+}
+
+Rules:
+- Accept keys: agents, players, or agent_mappings (first found) as potential source arrays.
+- For each entry try these precedence orders for identifiers: id, agent_id, index.
+- For role reference try: role_id, role, roleName.
+- Preserve source order.
+- If neither id nor role can be pulled, skip the entry (do not output incomplete records).
+
+Parsed JSON:
+{{ parsed_json }}

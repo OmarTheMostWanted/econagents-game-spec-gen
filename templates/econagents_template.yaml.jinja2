@@ -4,18 +4,22 @@ description: "{{ experiment_description }}"  # optional
 prompt_partials:
   {% for partial in prompt_partials %}
   - name: "{{ partial.name }}"
-    content: "{{ partial.content }}"
+    content: |-
+{% for line in partial.content.splitlines() %}      {{ line }}
+{% endfor %}
   {% endfor %}
 
 agent_roles:
   {% for role in agent_roles %}
   - role_id: {{ role.role_id }}
     name: "{{ role.name }}"
-    llm_type: "{{ role.llm_type | default('ChatOpenAI') }}"  # optional, set by human
+    llm_type: "{{ role.llm_type if role.llm_type is not none and role.llm_type|lower != 'none' else 'ChatOpenAI' }}"  # optional, set by human
     llm_params: {{ role.llm_params | default('{}') }}        # optional, set by human
-    prompts:  # optional
+    prompts:  # use partial prompts from prompt_partials if needed
       {% for prompt in role.prompts %}
-      - {{ prompt.key }}: "{{ prompt.value }}"
+      - {{ prompt.key }}: |-
+{% for line in prompt.value.splitlines() %}          {{ line }}
+{% endfor %}
       {% endfor %}
     task_phases: {{ role.task_phases | default('[]') }}      # optional
     task_phases_excluded: {{ role.task_phases_excluded | default('[]') }} # optional

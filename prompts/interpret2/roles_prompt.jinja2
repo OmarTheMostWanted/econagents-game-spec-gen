@@ -1,0 +1,86 @@
+{{ header }}
+You are the AGENT_ROLES stage.
+Goal: Produce a complete agent_roles array INCLUDING per-role prompt entries (so later stages don't need to reconstruct prompts) using ONLY the provided parsed JSON content and existing prompt partials.
+
+You receive:
+- The full parsed JSON spec (roles, phases, payoff_consequences, prompts, state, prompt_partials).
+- You MUST NOT use external knowledge.
+- If something cannot be derived strictly from this JSON content, emit the literal string "cannot infer" (for strings) or an empty list/dict if the schema structurally requires that container.
+
+Return STRICT JSON with schema:
+{
+  "agent_roles": [
+    {
+      "raw_role_id": "<original role id as string or int>",
+      "name": "<string or cannot infer>",
+      "llm_type": "<string or cannot infer>",
+      "llm_params": { ... } | {},
+      "task_phases": [<int>, ...],
+      "task_phases_excluded": [<int>, ...],
+      "notes": "<string or cannot infer>",
+      "prompts": [ {"key": "<prompt key>", "content": "<string or cannot infer>"}, ... ]
+    }, ...
+  ],
+  "phase_number_map": {"<phase name>": <int>, ...},
+  "actionable_phase_numbers": [<int>, ...]
+}
+
+Prompt Keys Guidelines:
+- Always include exactly one base system prompt with key: "system".
+- For each actionable phase in which the role has at least one task (role_tasks[roleName] non-empty) add:
+  - A user phase prompt: key = "user_phase_<phaseNumber>".
+  - If a matching system-phase partial exists (see Matching Partials) also add key = "system_phase_<phaseNumber>".
+- If a role participates in a phase but has zero tasks, do not create a user_phase entry.
+- DO NOT create keys not following the patterns above.
+
+Matching Partials (Derived from parsed JSON prompt_partials list):
+- A partial named exactly "game_description", "game_information", "game_instructions", or "game_history" should be referenced in prompts via Jinja include directives instead of inlining its text.
+- A partial named system_phase_<n> or user_phase_<n> (exact pattern) should be referenced for phase n in system_phase_<n> or user_phase_<n> prompt respectively.
+- A partial named system_<roleName>_<phaseNumber> or user_<roleName>_<phaseNumber> (roleName lower/underscored) should also be used preferentially over generic phase partials when present.
+
+Compose Prompt Content Rules:
+- Use INCLUDE directives rather than repeating large text blocks whenever a matching partial exists.
+  Example line (must appear literally, NOT rendered now):
+  {% raw %}{% include "_partials/game_description.jinja2" %}{% endraw %}
+- For a system prompt (key "system") recommended structure:
+  1. Include game_description if present.
+  2. A single concise identity sentence for the role (derived only from notes or tasks). If not derivable -> omit sentence.
+- For a user_phase_<n> prompt recommended structure (order):
+  1. Include game_information (if partial exists) else "cannot infer" if no dynamic meta placeholders exist in JSON.
+  2. Include game_instructions (if partial exists) next (instructions for making a decision).
+  3. Include game_history (if partial exists and at least one history-like field present in state public). Otherwise optionally omit or use "cannot infer".
+  4. If a specific user_phase_<n> or user_<role>_<n> partial exists include it next.
+  5. Enumerate valid actions derived from the role's tasks list for that phase (uppercase tokens). If none clearly parsed -> omit.
+  6. End with a JSON output format instruction only if the base prompts (parsed JSON) contained an explicit structured output example; otherwise omit.
+- For system_phase_<n> prompt (if produced): include system_phase_<n> partial OR system_<role>_<n> partial; if neither exists fallback to game_description + a short objective sentence OR "cannot infer" if nothing available.
+
+Handling Inference & Sentinels:
+- llm_type: If any prompt text or partial content contains a recognizable model token like "gpt" produce a generic type "ChatOpenAI"; else "cannot infer".
+- llm_params: If a concrete model name (e.g. gpt-4o, gpt-4, gpt-3.5) appears, set {"model_name": "<that>"}; else {}.
+- notes: Use roles[i].notes if present; if absent and tasks exist, compress distinct verbs from tasks into a short phrase; else "cannot infer".
+- task_phases: Sorted ascending unique phase_numbers where actionable==true AND role has task(s) in role_tasks for that phase.
+- task_phases_excluded: For each actionable phase where role has NO tasks, list that phase_number (sorted). If none -> empty list.
+- If an expected prompt key would be produced but all its content components are unavailable, set its content to "cannot infer" (do NOT skip the key if it logically applies because tasks exist for that phase).
+
+Content Formatting:
+- Use multiline content where needed. Do NOT wrap final content in triple backticks.
+- Each include directive on its own line.
+- Keep total tokens per prompt under ~250.
+- Avoid trailing whitespace.
+
+Phase / Role Name Normalization:
+- When searching for role-specific partials system_<role>_<n> or user_<role>_<n>, convert role name to lower_snake_case (spaces -> underscores, lowercase).
+
+Validation BEFORE output (YOU must ensure):
+1. Every agent_roles[i] has all required keys.
+2. prompts is a list; each entry has keys: key, content.
+3. No duplicate prompt keys for a given role.
+4. Required system prompt present for each role.
+5. user_phase_<n> keys only for actionable tasks phases.
+6. If a system_phase_<n> key is present, n must be in actionable_phase_numbers.
+7. phase_number_map and actionable_phase_numbers correctly reflect parsed phases.
+
+Parsed JSON Spec:
+{{ parsed_json }}
+
+(END OF PROMPT)

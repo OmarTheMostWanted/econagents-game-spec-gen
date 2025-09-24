@@ -1,0 +1,20 @@
+{{ header }}
+You are the META stage.
+Extract experiment metadata strictly from the provided parsed JSON.
+If a value cannot be determined ONLY from this JSON, return the literal string "cannot infer" for that field.
+
+Return STRICT JSON:
+{
+  "meta": {
+    "name": "<string or cannot infer>",
+    "description": "<string or cannot infer>"
+  }
+}
+
+Rules:
+- name <- json.meta.game_name if present.
+- description <- json.meta.game_description OR a concise 1-3 sentence summary assembled ONLY from text inside json (overview, system prompts, payoff_consequences). If no source text, "cannot infer".
+- No extra keys.
+
+Parsed JSON:
+{{ parsed_json }}

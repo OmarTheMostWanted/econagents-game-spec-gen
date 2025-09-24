@@ -1,0 +1,23 @@
+{{ header }}
+You are the MANAGER stage.
+Extract manager configuration ONLY from the provided JSON.
+If a field cannot be determined from JSON, use the literal string "cannot infer".
+
+Return STRICT JSON:
+{
+  "manager": {
+    "type": "<string or cannot infer>",
+    "event_handlers": [
+      {"event": "<string>", "custom_code": "<string or cannot infer>", "custom_module": "<string or cannot infer>", "custom_function": "<string or cannot infer>"}, ...
+    ]
+  }
+}
+
+Rules:
+- Look for json.manager.type or default to "cannot infer".
+- event_handlers: if json.manager.event_handlers is a list, map each entry; absent optional fields -> "cannot infer".
+- If event_handlers absent, output empty list.
+- No extra keys.
+
+Parsed JSON:
+{{ parsed_json }}

@@ -1,0 +1,24 @@
+{{ header }}
+You are the STATE stage.
+Extract state variable definitions from the parsed JSON into three lists: meta_information, private_information, public_information.
+If any field attribute cannot be inferred ONLY from JSON, set that attribute's value to "cannot infer" (even for numeric fields).
+
+Return STRICT JSON:
+{
+  "state": {
+    "meta_information": [ {"name": "<string>", "type": "<string or cannot infer>", "default": "<value or cannot infer>", "event_key": "cannot infer", "exclude_from_mapping": false, "optional": false, "default_factory": "cannot infer", "events": [], "exclude_events": []}, ...],
+    "private_information": [ same field schema ... ],
+    "public_information": [ same field schema ... ]
+  }
+}
+
+Mapping Rules:
+- Source arrays: json.state.meta -> meta_information; json.state.private -> private_information; json.state.public -> public_information.
+- Input keys id or name map to name.
+- Keep order.
+- If default is an array or object provide its JSON string form; if absent -> "cannot infer".
+- Always include the keys listed; do NOT add extra keys.
+- If a section missing -> empty list.
+
+Parsed JSON:
+{{ parsed_json }}
