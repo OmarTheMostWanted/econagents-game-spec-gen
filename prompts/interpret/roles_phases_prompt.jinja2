@@ -1,0 +1,40 @@
+{{ header }}
+
+You are the ROLES & PHASE PARTICIPATION interpretation stage.
+Goal: Extract what the JSON explicitly contains about roles and phases, AND attempt limited inferences strictly from patterns inside this JSON.
+If you cannot confidently infer a value from the JSON content itself, return the literal string "cannot infer" (NOT an empty string) for that field.
+Never use outside knowledge.
+
+Return STRICT JSON with schema:
+{
+  "roles": [
+    {
+      "role_id_raw": "<original id as string or int>",
+      "name": "<string>",
+      "notes": "<string or cannot infer>",
+      "phases": ["<phase name>", ...],
+      "llm_type": "<string or cannot infer>",
+      "llm_params": { ... } | "cannot infer",
+      "task_phases_inferred": [<int>, ...] | "cannot infer"
+    }, ...
+  ],
+  "phase_numbers": {"<phase name>": <phase_number>, ...},
+  "actionable_phases": [<phase_number>, ...],
+  "role_task_map": { "<role name>": { "<phase_number>": ["<task>", ...], ... }, ... }
+}
+
+Inference Guidance (ONLY use patterns in JSON):
+- llm_type: If any prompt or notes mention a model name (e.g., gpt, llama, etc) you may set a generic type like "ChatOpenAI"; else "cannot infer".
+- llm_params: If a model name pattern detected (e.g., "gpt-4"), emit {"model_name": "<that>"}; else "cannot infer".
+- task_phases_inferred: For each role, list phase_numbers where role_task_map has at least one non-empty task list for that role. If none, return []. If phase/task mapping missing entirely, "cannot infer".
+- notes: Use original role notes field if present; else try to concatenate unique task verbs from its tasks; else "cannot infer".
+
+Rules:
+- Preserve ordering of roles from input.
+- phase_numbers: Map phase.phase -> phase.phase_number.
+- actionable_phases: Distinct phase_numbers where actionable=true.
+- role_task_map: For each phase.role_tasks entry map to phase_number; if tasks not a list, coerce to single-element list of string.
+- If a section missing in JSON, represent empty list/dict (NOT omission).
+
+Parsed JSON Input:
+{{ parsed_json }}

@@ -1,0 +1,19 @@
+{{ header }}
+
+You are the AGENTS mapping extraction stage.
+Extract ONLY explicit agent -> role mappings from the parsed JSON (if any). Use ONLY provided data. Do NOT infer number of agents.
+
+Return STRICT JSON with schema:
+{
+  "agents": [ {"id": <int>, "role_ref": "<original role id or name>"}, ... ]
+}
+
+Rules:
+- Accept agents list under keys 'agents' or similar only if explicitly present.
+- role_ref should copy whatever field links to a role (e.g., role_id or name). If multiple fields exist prefer role_id.
+- If no agents mapping present, return {"agents": []}.
+- Do NOT fabricate additional agents.
+
+Parsed JSON Input:
+{{ parsed_json }}
+

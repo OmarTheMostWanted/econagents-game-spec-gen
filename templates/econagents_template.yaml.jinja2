@@ -1,7 +1,7 @@
 name: "{{ experiment_name }}"
 description: "{{ experiment_description }}"  # optional
 
-prompt_partials:  # optional
+prompt_partials:
   {% for partial in prompt_partials %}
   - name: "{{ partial.name }}"
     content: "{{ partial.content }}"
